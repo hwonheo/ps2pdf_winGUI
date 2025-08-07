@@ -1,0 +1,279 @@
+name: Build and Release
+
+on:
+  push:
+    tags: [ 'v*' ]  # v로 시작하는 태그가 푸시될 때만 실행
+  workflow_dispatch:  # 수동 실행도 가능
+
+jobs:
+  build-exe:
+    name: Build EXE
+    runs-on: windows-2022
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set UTF-8 encoding
+      run: |
+        chcp 65001
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+        echo "LANG=en_US.UTF-8" >> $env:GITHUB_ENV
+        echo "LC_ALL=en_US.UTF-8" >> $env:GITHUB_ENV
+    
+    - name: Install dependencies
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Test environment
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python fix_encoding.py
+        python -c "import tkinter; print('OK: tkinter available')"
+    
+    - name: Build EXE
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        pyinstaller --onefile --windowed --name PS2PDF_Converter ps2pdf_converter.py
+    
+    - name: Verify EXE build
+      run: |
+        if (Test-Path "dist\PS2PDF_Converter.exe") {
+          $size = (Get-Item "dist\PS2PDF_Converter.exe").Length / 1MB
+          Write-Host "✓ EXE created: $([math]::Round($size, 2)) MB"
+        } else {
+          Write-Host "✗ EXE build failed"
+          exit 1
+        }
+    
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PS2PDF-EXE
+        path: dist/PS2PDF_Converter.exe
+
+  build-portable:
+    name: Build Portable
+    runs-on: windows-2022
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set UTF-8 encoding
+      run: |
+        chcp 65001
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+        echo "LANG=en_US.UTF-8" >> $env:GITHUB_ENV
+        echo "LC_ALL=en_US.UTF-8" >> $env:GITHUB_ENV
+    
+    - name: Install dependencies
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Test environment
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python fix_encoding.py
+    
+    - name: Build portable executable
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        pyinstaller --onefile --windowed --name PS2PDF_Converter ps2pdf_converter.py
+    
+    - name: Create portable package
+      run: |
+        mkdir PS2PDF-Portable
+        Copy-Item "dist\PS2PDF_Converter.exe" "PS2PDF-Portable\"
+        Copy-Item "README.md" "PS2PDF-Portable\"
+        Copy-Item "LICENSE" "PS2PDF-Portable\"
+        if (Test-Path "ps") {
+          Copy-Item "ps" "PS2PDF-Portable\"
+        }
+        
+        # 사용 설명서 생성
+        @"
+        PS2PDF 변환기 포터블 버전
+        
+        🚀 실행 방법:
+        1. PS2PDF_Converter.exe를 더블클릭하여 실행
+        2. PS 파일을 선택하고 변환 버튼 클릭
+        
+        📋 주의사항:
+        - Ghostscript가 시스템에 설치되어 있어야 합니다
+        - 포터블 버전은 별도 설치가 필요 없습니다
+        - 샘플 PS 파일이 포함되어 있습니다 (있는 경우)
+        
+        📦 GitHub: https://github.com/hwonheo/ps2pdf_winGUI
+        
+        "@  | Out-File -FilePath "PS2PDF-Portable\사용법.txt" -Encoding UTF8
+        
+        # ZIP 압축
+        Compress-Archive -Path "PS2PDF-Portable\*" -DestinationPath "PS2PDF-Converter-Portable.zip"
+    
+    - name: Verify portable build
+      run: |
+        if (Test-Path "PS2PDF-Converter-Portable.zip") {
+          $size = (Get-Item "PS2PDF-Converter-Portable.zip").Length / 1MB
+          Write-Host "✓ Portable package created: $([math]::Round($size, 2)) MB"
+        } else {
+          Write-Host "✗ Portable build failed"
+          exit 1
+        }
+    
+    - name: Upload portable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PS2PDF-Portable
+        path: PS2PDF-Converter-Portable.zip
+
+  build-msi:
+    name: Build MSI
+    runs-on: windows-2022
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Set UTF-8 encoding
+      run: |
+        chcp 65001
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+        echo "LANG=en_US.UTF-8" >> $env:GITHUB_ENV
+        echo "LC_ALL=en_US.UTF-8" >> $env:GITHUB_ENV
+    
+    - name: Install dependencies
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python -m pip install --upgrade pip
+        pip install cx-freeze>=6.14.0
+        pip install -r requirements.txt
+    
+    - name: Test environment
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python fix_encoding.py
+        python -c "import tkinter; print('OK: tkinter available')"
+    
+    - name: Build MSI installer
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
+      run: |
+        chcp 65001
+        python setup_msi.py build
+        python setup_msi.py bdist_msi --verbose
+    
+    - name: Verify MSI build
+      run: |
+        if (Test-Path "dist\*.msi") {
+          Get-ChildItem "dist\*.msi" | ForEach-Object {
+            $size = $_.Length / 1MB
+            Write-Host "✓ MSI created: $($_.Name) ($([math]::Round($size, 2)) MB)"
+          }
+        } else {
+          Write-Host "✗ MSI build failed"
+          exit 1
+        }
+    
+    - name: Upload MSI artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PS2PDF-MSI
+        path: dist/*.msi
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-exe, build-portable, build-msi]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        merge-multiple: true
+        path: release-files
+    
+    - name: Display structure of downloaded files
+      run: ls -la release-files/
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-files/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+        name: PS2PDF Converter ${{ github.ref_name }}
+        body: |
+          ## PS2PDF 변환기 ${{ github.ref_name }}
+          
+          PostScript 파일을 PDF로 변환하는 Windows용 GUI 프로그램입니다.
+          
+          ### 📦 다운로드 옵션:
+          
+          - **PS2PDF_Converter.exe**: 단일 실행 파일 (권장)
+          - **PS2PDF-Converter-Portable.zip**: 포터블 패키지 (압축 해제 후 사용)
+          - **PS2PDF Converter-*.msi**: Windows 설치 프로그램
+          
+          ### 🔧 시스템 요구사항:
+          - Windows 7 이상
+          - [Ghostscript](https://www.ghostscript.com/download/gsdnld.html) 설치 필요
+          
+          ### 🚀 사용법:
+          1. Ghostscript를 먼저 설치하세요
+          2. 원하는 버전을 다운로드하세요
+          3. 프로그램을 실행하고 PS 파일을 선택하세요
+          4. 변환 버튼을 클릭하세요
+          
+          더 자세한 정보는 [README](https://github.com/hwonheo/ps2pdf_winGUI/blob/main/README.md)를 참조하세요.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
