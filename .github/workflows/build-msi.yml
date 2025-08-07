@@ -25,8 +25,8 @@ jobs:
     
     - name: Test imports
       run: |
-        python -c "import tkinter; print('✓ tkinter available')"
-        python -c "import pathlib; print('✓ pathlib available')"
+        python -c "import tkinter; print('OK: tkinter available')"
+        python -c "import pathlib; print('OK: pathlib available')"
     
     - name: Build MSI installer
       run: |
@@ -36,13 +36,13 @@ jobs:
       run: |
         dir dist
         if (Test-Path "dist\*.msi") {
-          Write-Host "✓ MSI installer created successfully"
+          Write-Host "SUCCESS: MSI installer created successfully"
           Get-ChildItem "dist\*.msi" | ForEach-Object {
             $size = $_.Length / 1MB
             Write-Host "File: $($_.Name), Size: $([math]::Round($size, 2)) MB"
           }
         } else {
-          Write-Host "✗ MSI installer not found"
+          Write-Host "ERROR: MSI installer not found"
           exit 1
         }
     

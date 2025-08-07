@@ -27,19 +27,19 @@ jobs:
       run: |
         python --version
         python -c "import sys; print('Python executable:', sys.executable)"
-        python -c "import tkinter; print('✓ tkinter available')"
-        python -c "import os; print('✓ os available')"
-        python -c "import subprocess; print('✓ subprocess available')"
-        python -c "import threading; print('✓ threading available')"
-        python -c "import pathlib; print('✓ pathlib available')"
+        python -c "import tkinter; print('OK: tkinter available')"
+        python -c "import os; print('OK: os available')"
+        python -c "import subprocess; print('OK: subprocess available')"
+        python -c "import threading; print('OK: threading available')"
+        python -c "import pathlib; print('OK: pathlib available')"
     
     - name: Check main script
       run: |
         if (Test-Path "ps2pdf_converter.py") {
-          Write-Host "✓ Main script found"
-          python -c "import ast; ast.parse(open('ps2pdf_converter.py').read()); print('✓ Script syntax OK')"
+          Write-Host "OK: Main script found"
+          python -c "import ast; ast.parse(open('ps2pdf_converter.py').read()); print('OK: Script syntax valid')"
         } else {
-          Write-Host "✗ Main script not found"
+          Write-Host "ERROR: Main script not found"
           Get-ChildItem
           exit 1
         }
@@ -51,11 +51,11 @@ jobs:
     - name: Check build output
       run: |
         if (Test-Path "dist\PS2PDF_Converter_Simple.exe") {
-          Write-Host "✓ Simple build successful!"
+          Write-Host "SUCCESS: Simple build completed!"
           $size = (Get-Item "dist\PS2PDF_Converter_Simple.exe").Length / 1MB
           Write-Host "File size: $([math]::Round($size, 2)) MB"
         } else {
-          Write-Host "✗ Build failed"
+          Write-Host "ERROR: Build failed"
           if (Test-Path "dist") {
             Write-Host "Contents of dist folder:"
             Get-ChildItem "dist"

@@ -31,9 +31,9 @@ jobs:
       run: |
         dir dist
         if (Test-Path "dist\hello_test.exe") {
-          Write-Host "✓ Hello test build successful!"
+          Write-Host "SUCCESS: Hello test build completed!"
         } else {
-          Write-Host "✗ Build failed"
+          Write-Host "ERROR: Build failed"
           exit 1
         }
     

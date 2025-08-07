@@ -42,11 +42,11 @@ jobs:
       run: |
         dir dist
         if (Test-Path "dist\PS2PDF_Converter.exe") {
-          Write-Host "✓ Executable created successfully"
+          Write-Host "SUCCESS: Executable created successfully"
           $size = (Get-Item "dist\PS2PDF_Converter.exe").Length / 1MB
           Write-Host "File size: $([math]::Round($size, 2)) MB"
         } else {
-          Write-Host "✗ Executable not found"
+          Write-Host "ERROR: Executable not found"
           exit 1
         }
     
