@@ -49,6 +49,11 @@ include_files = [
     ("LICENSE", "LICENSE")
 ]
 
+# 아이콘 파일 처리 (없으면 None)
+icon_file = None
+if os.path.exists("icon.ico"):
+    icon_file = "icon.ico"
+
 # 빌드 옵션
 build_exe_options = {
     "packages": [],
@@ -63,16 +68,19 @@ build_exe_options = {
 bdist_msi_options = {
     "upgrade_code": "{12345678-1234-5678-9012-123456789012}",
     "add_to_path": False,
-    "initial_target_dir": r"[ProgramFilesFolder]\PS2PDF Converter",
-    "install_icon": "icon.ico"  # 아이콘 파일이 있다면
+    "initial_target_dir": r"[ProgramFilesFolder]\PS2PDF Converter"
 }
+
+# 아이콘이 있으면 MSI 옵션에 추가
+if icon_file:
+    bdist_msi_options["install_icon"] = icon_file
 
 # 실행 파일 설정
 executable = Executable(
     script="ps2pdf_converter.py",
     base="Win32GUI",  # GUI 애플리케이션
     target_name="PS2PDF_Converter.exe",
-    icon=None,  # 아이콘 파일 경로 (있다면)
+    icon=icon_file,  # 아이콘 파일 경로 (있다면)
     shortcut_name="PS2PDF 변환기",
     shortcut_dir="DesktopFolder"
 )
