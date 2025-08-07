@@ -95,7 +95,6 @@ build_exe_options = {
     "include_files": include_files,
     "optimize": 2,
     "build_exe": "build/PS2PDF_Converter",
-    "include_msvcrt": True,
     "silent": True
 }
 
