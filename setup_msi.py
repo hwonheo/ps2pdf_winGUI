@@ -23,7 +23,10 @@ includes = [
     "threading",
     "pathlib",
     "os",
-    "sys"
+    "sys",
+    "platform",
+    "shutil",
+    "time"
 ]
 
 # 제외할 모듈들 (크기 최적화)
@@ -44,10 +47,15 @@ excludes = [
 
 # 포함할 파일들
 include_files = [
-    ("ps", "ps"),  # 샘플 PS 파일
     ("README.md", "README.md"),
     ("LICENSE", "LICENSE")
 ]
+
+# ps 파일이 존재하고 크기가 적당하면 포함
+if os.path.exists("ps") and os.path.getsize("ps") < 1024 * 1024:  # 1MB 미만
+    include_files.append(("ps", "ps"))
+else:
+    print("경고: ps 파일이 너무 크거나 없어서 MSI에서 제외됩니다.")
 
 # 아이콘 파일 처리 (없으면 None)
 icon_file = None
@@ -56,19 +64,26 @@ if os.path.exists("icon.ico"):
 
 # 빌드 옵션
 build_exe_options = {
-    "packages": [],
+    "packages": ["tkinter"],
     "includes": includes,
     "excludes": excludes,
     "include_files": include_files,
     "optimize": 2,
-    "build_exe": "build/PS2PDF_Converter"
+    "build_exe": "build/PS2PDF_Converter",
+    "include_msvcrt": True,
+    "silent": True
 }
 
 # MSI 옵션
 bdist_msi_options = {
     "upgrade_code": "{12345678-1234-5678-9012-123456789012}",
     "add_to_path": False,
-    "initial_target_dir": r"[ProgramFilesFolder]\PS2PDF Converter"
+    "initial_target_dir": r"[ProgramFilesFolder]\PS2PDF Converter",
+    "summary_data": {
+        "author": AUTHOR,
+        "comments": DESCRIPTION,
+        "keywords": "PostScript PDF 변환기"
+    }
 }
 
 # 아이콘이 있으면 MSI 옵션에 추가
