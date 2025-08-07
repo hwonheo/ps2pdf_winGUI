@@ -17,6 +17,12 @@ jobs:
       with:
         python-version: '3.11'
     
+    - name: Set UTF-8 encoding
+      run: |
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "LANG=en_US.UTF-8" >> $env:GITHUB_ENV
+        chcp 65001
+    
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -24,14 +30,25 @@ jobs:
         pip install -r requirements.txt
         pip list
     
-    - name: Test imports
+    - name: Test imports and encoding
       run: |
+        python -c "import sys; print('Python encoding:', sys.getdefaultencoding())"
+        python -c "import locale; print('System encoding:', locale.getpreferredencoding())"
         python -c "import tkinter; print('OK: tkinter available')"
         python -c "import pathlib; print('OK: pathlib available')"
+        if (Test-Path "ps2pdf_converter.py") {
+          echo "OK: Main script found"
+          python -c "with open('ps2pdf_converter.py', 'r', encoding='utf-8') as f: print('OK: File can be read with UTF-8')"
+        }
     
     - name: Build MSI installer
+      env:
+        PYTHONIOENCODING: utf-8
+        PYTHONUTF8: 1
       run: |
         echo "Starting MSI build process..."
+        echo "Current encoding settings:"
+        python -c "import sys, locale; print(f'Default encoding: {sys.getdefaultencoding()}'); print(f'File system encoding: {sys.getfilesystemencoding()}'); print(f'Locale encoding: {locale.getpreferredencoding()}')"
         python setup_msi.py build
         echo "Build completed, creating MSI..."
         python setup_msi.py bdist_msi --verbose

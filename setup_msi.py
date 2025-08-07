@@ -8,9 +8,16 @@ import sys
 import os
 from cx_Freeze import setup, Executable
 
+# Windows에서 UTF-8 인코딩 강제 설정
+if sys.platform.startswith('win'):
+    import locale
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+
 # 현재 버전 정보
 VERSION = "1.0.0"
-DESCRIPTION = "PostScript to PDF 변환기"
+DESCRIPTION = "PostScript to PDF Converter"
 AUTHOR = "PS2PDF Team"
 
 # 실행 파일에 포함할 모듈들
@@ -55,7 +62,7 @@ include_files = [
 if os.path.exists("ps") and os.path.getsize("ps") < 1024 * 1024:  # 1MB 미만
     include_files.append(("ps", "ps"))
 else:
-    print("경고: ps 파일이 너무 크거나 없어서 MSI에서 제외됩니다.")
+    print("Warning: ps file is too large or missing, excluded from MSI.")
 
 # 아이콘 파일 처리 (없으면 None)
 icon_file = None
@@ -82,7 +89,7 @@ bdist_msi_options = {
     "summary_data": {
         "author": AUTHOR,
         "comments": DESCRIPTION,
-        "keywords": "PostScript PDF 변환기"
+        "keywords": "PostScript PDF Converter"
     }
 }
 
@@ -96,7 +103,7 @@ executable = Executable(
     base="Win32GUI",  # GUI 애플리케이션
     target_name="PS2PDF_Converter.exe",
     icon=icon_file,  # 아이콘 파일 경로 (있다면)
-    shortcut_name="PS2PDF 변환기",
+    shortcut_name="PS2PDF Converter",
     shortcut_dir="DesktopFolder"
 )
 
