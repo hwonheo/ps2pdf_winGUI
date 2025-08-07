@@ -1,0 +1,5 @@
+tkinter
+Pillow>=9.0.0
+ghostscript>=0.7
+pyinstaller>=5.0
+cx-freeze>=6.0

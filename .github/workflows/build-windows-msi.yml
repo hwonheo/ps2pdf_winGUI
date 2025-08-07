@@ -1,0 +1,134 @@
+name: Build Windows MSI
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install cx-freeze
+    
+    - name: Install Ghostscript
+      run: |
+        # Ghostscript 다운로드 및 설치
+        $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10021/gs10021w64.exe"
+        $output = "gs_installer.exe"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Start-Process -FilePath $output -ArgumentList "/S" -Wait
+        # PATH에 Ghostscript 추가
+        $env:PATH += ";C:\Program Files\gs\gs10.02.1\bin"
+        echo "C:\Program Files\gs\gs10.02.1\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    
+    - name: Build executable with cx_Freeze
+      run: |
+        python setup_msi.py build
+    
+    - name: Create MSI installer
+      run: |
+        python setup_msi.py bdist_msi
+    
+    - name: List build artifacts
+      run: |
+        Get-ChildItem -Path "dist" -Recurse
+    
+    - name: Upload MSI artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: PS2PDF-Converter-MSI
+        path: dist/*.msi
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.msi
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-portable:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Install Ghostscript
+      run: |
+        $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10021/gs10021w64.exe"
+        $output = "gs_installer.exe"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Start-Process -FilePath $output -ArgumentList "/S" -Wait
+        $env:PATH += ";C:\Program Files\gs\gs10.02.1\bin"
+        echo "C:\Program Files\gs\gs10.02.1\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    
+    - name: Build portable executable
+      run: |
+        python build_windows.py
+    
+    - name: Create portable package
+      run: |
+        # 포터블 패키지 생성
+        mkdir PS2PDF-Portable
+        Copy-Item "dist\PS2PDF_Converter.exe" "PS2PDF-Portable\"
+        Copy-Item "README.md" "PS2PDF-Portable\"
+        Copy-Item "LICENSE" "PS2PDF-Portable\"
+        
+        # 사용 설명서 생성
+        @"
+        PS2PDF 변환기 포터블 버전
+        
+        실행 방법:
+        1. PS2PDF_Converter.exe를 더블클릭하여 실행
+        2. PS 파일을 선택하고 변환 버튼 클릭
+        
+        주의사항:
+        - Ghostscript가 시스템에 설치되어 있어야 합니다
+        - 포터블 버전은 별도 설치가 필요 없습니다
+        
+        "@  | Out-File -FilePath "PS2PDF-Portable\사용법.txt" -Encoding UTF8
+        
+        # ZIP 압축
+        Compress-Archive -Path "PS2PDF-Portable\*" -DestinationPath "PS2PDF-Converter-Portable.zip"
+    
+    - name: Upload portable artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: PS2PDF-Converter-Portable
+        path: PS2PDF-Converter-Portable.zip
+    
+    - name: Upload to Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: PS2PDF-Converter-Portable.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
