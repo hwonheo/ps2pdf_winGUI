@@ -64,7 +64,7 @@ jobs:
         }
     
     - name: Upload simple build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: PS2PDF-Simple-Build
         path: dist/PS2PDF_Converter_Simple.exe
