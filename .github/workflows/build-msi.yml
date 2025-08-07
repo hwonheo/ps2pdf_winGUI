@@ -1,0 +1,62 @@
+name: Build Windows MSI
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cx-freeze
+        pip install -r requirements.txt
+    
+    - name: Test imports
+      run: |
+        python -c "import tkinter; print('✓ tkinter available')"
+        python -c "import pathlib; print('✓ pathlib available')"
+    
+    - name: Build MSI installer
+      run: |
+        python setup_msi.py bdist_msi
+    
+    - name: List build artifacts
+      run: |
+        dir dist
+        if (Test-Path "dist\*.msi") {
+          Write-Host "✓ MSI installer created successfully"
+          Get-ChildItem "dist\*.msi" | ForEach-Object {
+            $size = $_.Length / 1MB
+            Write-Host "File: $($_.Name), Size: $([math]::Round($size, 2)) MB"
+          }
+        } else {
+          Write-Host "✗ MSI installer not found"
+          exit 1
+        }
+    
+    - name: Upload MSI artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: PS2PDF-Converter-MSI
+        path: dist/*.msi
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.msi
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
