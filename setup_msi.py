@@ -12,8 +12,26 @@ from cx_Freeze import setup, Executable
 if sys.platform.startswith('win'):
     import locale
     import codecs
-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    import io
+    
+    # 환경 변수 설정
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    os.environ['PYTHONUTF8'] = '1'
+    
+    # stdout/stderr UTF-8 설정
+    try:
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    except:
+        # 이미 설정되어 있거나 실패할 경우 무시
+        pass
+    
+    # 기본 인코딩 설정 시도
+    try:
+        import _locale
+        _locale._getdefaultlocale = (lambda *args: ['en_US', 'utf8'])
+    except:
+        pass
 
 # 현재 버전 정보
 VERSION = "1.0.0"
