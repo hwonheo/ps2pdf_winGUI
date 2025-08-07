@@ -1,0 +1,70 @@
+name: Simple Build Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install basic dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+    
+    - name: Test Python environment
+      run: |
+        python --version
+        python -c "import sys; print('Python executable:', sys.executable)"
+        python -c "import tkinter; print('✓ tkinter available')"
+        python -c "import os; print('✓ os available')"
+        python -c "import subprocess; print('✓ subprocess available')"
+        python -c "import threading; print('✓ threading available')"
+        python -c "import pathlib; print('✓ pathlib available')"
+    
+    - name: Check main script
+      run: |
+        if (Test-Path "ps2pdf_converter.py") {
+          Write-Host "✓ Main script found"
+          python -c "import ast; ast.parse(open('ps2pdf_converter.py').read()); print('✓ Script syntax OK')"
+        } else {
+          Write-Host "✗ Main script not found"
+          Get-ChildItem
+          exit 1
+        }
+    
+    - name: Try simple build
+      run: |
+        pyinstaller --onefile --windowed --name PS2PDF_Converter_Simple ps2pdf_converter.py
+    
+    - name: Check build output
+      run: |
+        if (Test-Path "dist\PS2PDF_Converter_Simple.exe") {
+          Write-Host "✓ Simple build successful!"
+          $size = (Get-Item "dist\PS2PDF_Converter_Simple.exe").Length / 1MB
+          Write-Host "File size: $([math]::Round($size, 2)) MB"
+        } else {
+          Write-Host "✗ Build failed"
+          if (Test-Path "dist") {
+            Write-Host "Contents of dist folder:"
+            Get-ChildItem "dist"
+          }
+          exit 1
+        }
+    
+    - name: Upload simple build
+      uses: actions/upload-artifact@v3
+      with:
+        name: PS2PDF-Simple-Build
+        path: dist/PS2PDF_Converter_Simple.exe
