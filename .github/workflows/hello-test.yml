@@ -1,0 +1,44 @@
+name: Hello World Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  hello-test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+    
+    - name: Test Hello Script
+      run: python hello_test.py
+    
+    - name: Build Hello Script
+      run: pyinstaller --onefile hello_test.py
+    
+    - name: Check Build
+      run: |
+        dir dist
+        if (Test-Path "dist\hello_test.exe") {
+          Write-Host "✓ Hello test build successful!"
+        } else {
+          Write-Host "✗ Build failed"
+          exit 1
+        }
+    
+    - name: Upload Hello Test
+      uses: actions/upload-artifact@v3
+      with:
+        name: hello-test
+        path: dist/hello_test.exe
