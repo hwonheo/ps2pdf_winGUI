@@ -34,7 +34,7 @@ if sys.platform.startswith('win'):
         pass
 
 # 현재 버전 정보
-VERSION = "1.0.0"
+VERSION = "1.2.3"
 DESCRIPTION = "PostScript to PDF Converter"
 AUTHOR = "PS2PDF Team"
 
